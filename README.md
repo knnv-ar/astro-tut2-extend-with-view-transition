@@ -78,6 +78,257 @@ npm install astro@latest
 npm install @astrojs/preact@latest
 ```
 
+> **Tip**<br>
+If you are using your own project, then be sure to update any dependencies you have installed. The example blog tutorial codebase only uses the Preact integration.
+
+
+### Add the `<ViewTransitions />` router
+
+2. Import and add the `<ViewTransitions />` component to the `<head>` of your page layout.
+
+In the Blog tutorial example, the `<head>` element is found in `src/layouts/BaseLayout.astro`. The `ViewTransitions` router must be first imported into the component’s frontmatter. Then, add the routing component inside the `<head>` element.
+
+```jsx
+---
+import { ViewTransitions } from "astro:transitions";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import "../styles/global.css";
+const { pageTitle } = Astro.props;
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
+    <ViewTransitions />
+  </head>
+  <body>
+    <Header />
+    <h1>{pageTitle}</h1>
+    <slot />
+    <Footer />
+    <script>
+      import "../scripts/menu.js";
+    </script>
+  </body>
+</html>
+```
+
+No other configuration is necessary to enable Astro’s default client-side navigation! Astro will create default page animations based on the similarities between the old and new page, and will also provide fallback behavior for unsupported browsers.
+
+3. Navigate between pages in your site preview.
+
+View your site preview at a large screen size, such as desktop mode. As you move between pages on your site, notice that the old page content appears to fade out as the new page content fades in. Use the view transitions guide to add custom behavior if you are not satisfied with the defaults.
+
+View your site preview at a smaller screen size, and try to use the hamburger menu to navigate between pages. Notice that your menu will no longer work after the first page load.
+
+### Update scripts
+
+With view transitions, some scripts may no longer re-run after page navigation like they do with full-page browser refreshes. There are several [events during client-side routing that you can listen for](https://docs.astro.build/en/guides/view-transitions/#lifecycle-events), and fire events when they occur. The scripts in your project will now need to hook into two events to run at the right time during page navigation: `astro:page-load` and `astro:after-swap`.
+
+4. Make the script controlling the `<Hamburger />` mobile menu component available after navigating to a new page.
+
+To make your mobile menu interactive after navigating to a new page, add the following code that listens for the `astro:page-load` event which runs at the end of page navigation, and in response, runs the existing script to make the hamburger menu function when clicked:
+
+```jsx
+document.addEventListener('astro:page-load', () => {
+  document.querySelector('.hamburger').addEventListener('click', () => {
+    document.querySelector('.nav-links').classList.toggle('expanded');
+  });
+});
+```
+
+5. Make the script controlling the theme toggle available after page navigation (in `src/components/ThemeIcon.astro`).
+
+The `<script>` that controls the light/dark theme toggle is located in the `<ThemeIcon />` component. For the theme toggle to continue to function on every page, remove the `is:inline` attribute from the script and add the same event listener as in the previous example so that `astro:page-load` event can trigger your existing function.
+
+Update the existing script tag so that your function runs in response to the `astro:page-load` event, making your theme toggle interactive after the new page is fully loaded and visible to the user:
+
+```jsx
+---
+
+---
+
+<button id="themeToggle">
+  <svg width="30px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path
+      class="sun"
+      fill-rule="evenodd"
+      d="M12 17.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11zm0 1.5a7 7 0 1 0 0-14 7 7 0 0 0 0 14zm12-7a.8.8 0 0 1-.8.8h-2.4a.8.8 0 0 1 0-1.6h2.4a.8.8 0 0 1 .8.8zM4 12a.8.8 0 0 1-.8.8H.8a.8.8 0 0 1 0-1.6h2.5a.8.8 0 0 1 .8.8zm16.5-8.5a.8.8 0 0 1 0 1l-1.8 1.8a.8.8 0 0 1-1-1l1.7-1.8a.8.8 0 0 1 1 0zM6.3 17.7a.8.8 0 0 1 0 1l-1.7 1.8a.8.8 0 1 1-1-1l1.7-1.8a.8.8 0 0 1 1 0zM12 0a.8.8 0 0 1 .8.8v2.5a.8.8 0 0 1-1.6 0V.8A.8.8 0 0 1 12 0zm0 20a.8.8 0 0 1 .8.8v2.4a.8.8 0 0 1-1.6 0v-2.4a.8.8 0 0 1 .8-.8zM3.5 3.5a.8.8 0 0 1 1 0l1.8 1.8a.8.8 0 1 1-1 1L3.5 4.6a.8.8 0 0 1 0-1zm14.2 14.2a.8.8 0 0 1 1 0l1.8 1.7a.8.8 0 0 1-1 1l-1.8-1.7a.8.8 0 0 1 0-1z"
+    ></path>
+    <path
+      class="moon"
+      fill-rule="evenodd"
+      d="M16.5 6A10.5 10.5 0 0 1 4.7 16.4 8.5 8.5 0 1 0 16.4 4.7l.1 1.3zm-1.7-2a9 9 0 0 1 .2 2 9 9 0 0 1-11 8.8 9.4 9.4 0 0 1-.8-.3c-.4 0-.8.3-.7.7a10 10 0 0 0 .3.8 10 10 0 0 0 9.2 6 10 10 0 0 0 4-19.2 9.7 9.7 0 0 0-.9-.3c-.3-.1-.7.3-.6.7a9 9 0 0 1 .3.8z"
+    ></path>
+  </svg>
+</button>
+
+<style>
+  #themeToggle {
+    border: 0;
+    background: none;
+  }
+
+  .sun {
+    fill: black;
+  }
+  .moon {
+    fill: transparent;
+  }
+
+  :global(.dark) .sun {
+    fill: transparent;
+  }
+  :global(.dark) .moon {
+    fill: white;
+  }
+</style>
+
+<script>
+  document.addEventListener("astro:page-load", () => {
+    const theme = (() => {
+      if (
+        typeof localStorage !== "undefined" &&
+        localStorage.getItem("theme")
+      ) {
+        return localStorage.getItem("theme");
+      }
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        return "dark";
+      }
+      return "light";
+    })();
+
+    if (theme === "light") {
+      document.documentElement.classList.remove("dark");
+    } else {
+      document.documentElement.classList.add("dark");
+    }
+
+    window.localStorage.setItem("theme", theme);
+
+    const handleToggleClick = () => {
+      const element = document.documentElement;
+      element.classList.toggle("dark");
+
+      const isDark = element.classList.contains("dark");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    };
+
+    document
+      .getElementById("themeToggle")
+      .addEventListener("click", handleToggleClick);
+  });
+</script>
+```
+
+Now, the theme toggle is interactive on every page when using the `<ViewTransitions />` router, after the page has finished loading.
+
+6. Check for theme earlier to prevent flashing in dark mode.
+
+The theme toggle works on every page, but its script is loaded at the end of the navigation process, **after the new page has fully loaded in the browser**. There may be a flash of the light theme version of the site before this theme toggle script runs and checks which theme it should use on the page.
+
+To check for, and if necessary set, dark mode earlier in the navigation process, create a function that will run in response to the `astro:after-swap` event. The following function to check the browser’s `localStorage` for dark theme will run **immediately after the new page has replaced the old page**, before the DOM elements are painted to the screen.
+
+Add this new script to the `<ThemeIcon />` component, in addition to the script that controls the theme toggle (in `src/components/ThemeIcon.astro`).
+
+```jsx
+---
+
+---
+
+<button id="themeToggle">
+  <svg width="30px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path
+      class="sun"
+      fill-rule="evenodd"
+      d="M12 17.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11zm0 1.5a7 7 0 1 0 0-14 7 7 0 0 0 0 14zm12-7a.8.8 0 0 1-.8.8h-2.4a.8.8 0 0 1 0-1.6h2.4a.8.8 0 0 1 .8.8zM4 12a.8.8 0 0 1-.8.8H.8a.8.8 0 0 1 0-1.6h2.5a.8.8 0 0 1 .8.8zm16.5-8.5a.8.8 0 0 1 0 1l-1.8 1.8a.8.8 0 0 1-1-1l1.7-1.8a.8.8 0 0 1 1 0zM6.3 17.7a.8.8 0 0 1 0 1l-1.7 1.8a.8.8 0 1 1-1-1l1.7-1.8a.8.8 0 0 1 1 0zM12 0a.8.8 0 0 1 .8.8v2.5a.8.8 0 0 1-1.6 0V.8A.8.8 0 0 1 12 0zm0 20a.8.8 0 0 1 .8.8v2.4a.8.8 0 0 1-1.6 0v-2.4a.8.8 0 0 1 .8-.8zM3.5 3.5a.8.8 0 0 1 1 0l1.8 1.8a.8.8 0 1 1-1 1L3.5 4.6a.8.8 0 0 1 0-1zm14.2 14.2a.8.8 0 0 1 1 0l1.8 1.7a.8.8 0 0 1-1 1l-1.8-1.7a.8.8 0 0 1 0-1z"
+    ></path>
+    <path
+      class="moon"
+      fill-rule="evenodd"
+      d="M16.5 6A10.5 10.5 0 0 1 4.7 16.4 8.5 8.5 0 1 0 16.4 4.7l.1 1.3zm-1.7-2a9 9 0 0 1 .2 2 9 9 0 0 1-11 8.8 9.4 9.4 0 0 1-.8-.3c-.4 0-.8.3-.7.7a10 10 0 0 0 .3.8 10 10 0 0 0 9.2 6 10 10 0 0 0 4-19.2 9.7 9.7 0 0 0-.9-.3c-.3-.1-.7.3-.6.7a9 9 0 0 1 .3.8z"
+    ></path>
+  </svg>
+</button>
+
+<style>
+  #themeToggle {
+    border: 0;
+    background: none;
+  }
+
+  .sun {
+    fill: black;
+  }
+  .moon {
+    fill: transparent;
+  }
+
+  :global(.dark) .sun {
+    fill: transparent;
+  }
+  :global(.dark) .moon {
+    fill: white;
+  }
+</style>
+
+<script>
+  document.addEventListener("astro:page-load", () => {
+    const theme = (() => {
+      if (
+        typeof localStorage !== "undefined" &&
+        localStorage.getItem("theme")
+      ) {
+        return localStorage.getItem("theme");
+      }
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        return "dark";
+      }
+      return "light";
+    })();
+
+    if (theme === "light") {
+      document.documentElement.classList.remove("dark");
+    } else {
+      document.documentElement.classList.add("dark");
+    }
+
+    window.localStorage.setItem("theme", theme);
+
+    const handleToggleClick = () => {
+      const element = document.documentElement;
+      element.classList.toggle("dark");
+
+      const isDark = element.classList.contains("dark");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    };
+
+    document
+      .getElementById("themeToggle")
+      .addEventListener("click", handleToggleClick);
+  });
+</script>
+
+<script>
+  document.addEventListener("astro:after-swap", () => {
+    localStorage.theme === "dark"
+      ? document.documentElement.classList.add("dark")
+      : document.documentElement.classList.remove("dark");
+  });
+</script>
+
+```
+
+Now, every page change **that uses the `<ViewTransitions />` router for client-side navigation** (and therefore access to the `astro:after-swap` event) will be able to detect `theme: dark` from the browser’s `localStorage` and update the current page accordingly before the page is rendered for the viewer.
+
+#### Test your knowledge
+
+CONTINUAR
 
 ---
 
